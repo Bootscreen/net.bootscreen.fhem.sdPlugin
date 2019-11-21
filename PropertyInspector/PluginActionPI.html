@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,minimal-ui,viewport-fit=cover">
+    <meta name=apple-mobile-web-app-capable content=yes>
+    <meta name=apple-mobile-web-app-status-bar-style content=black>
+    <title>net.bootscreen.fhem.sdPlugin Settings</title>
+    <link rel="stylesheet" href="sdpi.css">
+    <script src="sdtools.common.js"></script>
+    <script src="PluginActionPI.js"></script>
+</head>
+<body>
+    <div class="sdpi-wrapper">
+        <div class="sdpi-item" id="cat_fhem_command">
+            <div class="sdpi-item-label">Command</div>
+            <input class="sdpi-item-value sdProperty" placeholder="" value="" id="fhem_command" oninput="setSettings()">
+        </div>
+        <div class="sdpi-item" id="cat_fhem_device">
+            <div class="sdpi-item-label">Value Device</div>
+            <input class="sdpi-item-value sdProperty" placeholder="" value="" id="fhem_device" oninput="setSettings()">
+        </div>
+
+        <hr />
+
+        <div class="sdpi-heading">
+            <div class="sdpi-item-label">FHEM Web Settings</div>
+        </div>
+        <div class="sdpi-item" id="cat_fhem_ip" title="IP-Adress of FHEM Web Instance.">
+            <div class="sdpi-item-label">IP-Address</div>
+            <input class="sdpi-item-value sdGlobalProperty" id="fhem_ip" value="" placeholder="e.g. 192.168.1.1" required pattern="\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}">
+        </div>
+        <div class="sdpi-item" id="cat_fhem_port" title="Port of FHEM Web Instance.">
+            <div class="sdpi-item-label">Port</div>
+            <input class="sdpi-item-value sdGlobalProperty" id="fhem_port" inputmode="numeric" pattern="[0-9]*" name="port">
+        </div>
+        <div class="sdpi-item" id="cat_fhem_username">
+            <div class="sdpi-item-label">Username</div>
+            <input class="sdpi-item-value sdGlobalProperty" type="text" id="fhem_username" value="">
+        </div>
+        <div class="sdpi-item" id="cat_fhem_password">
+            <div class="sdpi-item-label">Password</div>
+            <input class="sdpi-item-value sdGlobalProperty" type="password" id="fhem_password" value="" placeholder="Enter your password" oninput="">
+        </div>
+        <div class="sdpi-item" id="cat_fhem_csrf">
+            <div class="sdpi-item-label">CSRF Token</div>
+            <input class="sdpi-item-value sdGlobalProperty" type="text" id="fhem_csrf" value="">
+        </div>
+        <div class="sdpi-item" id="cat_fhem_save">
+            <button onclick="setSettings(true)" class="sdpi-item-value" value="fhem_save">Save</button>
+        </div>
+    </div>
+</body>
+</html>

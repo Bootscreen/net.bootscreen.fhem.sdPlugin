@@ -1,0 +1,38 @@
+{
+  "Actions": [
+    {
+      "Icon": "Images/icon",
+      "Name": "Send Command",
+      "States": [
+        {
+          "Image": "Images/pluginAction",
+          "TitleAlignment": "middle",
+          "FontSize": "12"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "Tooltip": "Simple Button to send one command to FHEM",
+      "UUID": "net.bootscreen.fhem.onecommand",
+      "PropertyInspectorPath": "PropertyInspector/PluginActionPI.html"
+    }
+  ],
+  "Author": "Bootscreen",
+  "Name": "FHEM",
+  "Description": "Interact with Homeautomation Server FHEM",
+  "Icon": "Images/pluginIcon",
+  "URL": "https://github.com/Bootscreen/net.bootscreen.fhem.sdPlugin",
+  "Version": "1.0",
+  "CodePath": "net.bootscreen.fhem.exe",
+  "Category": "FHEM",
+  "CategoryIcon": "Images/categoryIcon",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "4.3"
+  }
+}
