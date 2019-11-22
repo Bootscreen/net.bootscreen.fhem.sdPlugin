@@ -5,9 +5,9 @@ setlocal
 
 REM MAKE SURE THE FOLLOWING ARE CORRECT
 SET OUTPUT_DIR=C:\TEMP
-SET INPUT_DIR=C:\Users\boots\source\repos\net.bootscreen.fhem\bin\Debug
-SET DISTRIBUTION_TOOL=C:\Users\boots\source\repos\DistributionTool.exe
-SET STREAM_DECK_FILE=C:\Program Files\Elgato\StreamDeck\StreamDeck.exe
+SET INPUT_DIR=%USERPROFILE%\source\repos\net.bootscreen.fhem\bin\Debug
+SET DISTRIBUTION_TOOL=%USERPROFILE%\source\repos\DistributionTool.exe
+SET STREAM_DECK_FILE=%ProgramW6432%\Elgato\StreamDeck\StreamDeck.exe
 SET UUID=net.bootscreen.fhem
 
 cd %INPUT_DIR%

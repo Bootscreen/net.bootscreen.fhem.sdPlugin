@@ -17,8 +17,9 @@ namespace net.bootscreen.fhem
     [PluginActionId("net.bootscreen.fhem.onecommand")]
     public class PluginAction : PluginBase
     {
-        Task longpoll;
-        bool restart = false;
+        //Task longpoll;
+        readonly FHEMClient fhem_client = FHEMClient.Instance;
+        //bool restart = false;
         private class PluginSettings
         {
             public static PluginSettings CreateDefaultSettings()
@@ -52,6 +53,8 @@ namespace net.bootscreen.fhem
             public string FHEM_pw { get; set; }
             [JsonProperty(PropertyName = "fhem_csrf")]
             public string FHEM_csrf { get; set; }
+            [JsonProperty(PropertyName = "fhem_filter")]
+            public string FHEM_filter { get; set; }
         }
 
         #region Private Members
@@ -74,6 +77,9 @@ namespace net.bootscreen.fhem
 
             Connection.GetGlobalSettingsAsync();
 
+            Console.WriteLine(fhem_client);
+
+            Logger.Instance.LogMessage(TracingLevel.DEBUG, this.GetHashCode() + "fhem_client : " + fhem_client.GetHashCode());
             //if (settings_complete())
             //{
             //    if (longpoll == null)
@@ -108,21 +114,7 @@ namespace net.bootscreen.fhem
             //Logger.Instance.LogMessage(TracingLevel.DEBUG, payload.Settings.ToString());
             Tools.AutoPopulateSettings(settings, payload.Settings);
 
-            if (SettingsComplete())
-            {
-                if (longpoll == null)
-                {
-                    longpoll = Task.Run(LongpollAsync); // Connection.ContextId;
-                    Logger.Instance.LogMessage(TracingLevel.DEBUG, "Task.Run " + Connection.ContextId + ": " + longpoll.GetHashCode());
-                }
-                else
-                {
-                    restart = true;
-                    Logger.Instance.LogMessage(TracingLevel.DEBUG, "restart Task.Run " + Connection.ContextId + ": " + longpoll.GetHashCode());
-                }
-                //Logger.Instance.LogMessage(TracingLevel.DEBUG, "longpoll_Async");
-                //Logger.Instance.LogMessage(TracingLevel.DEBUG, Connection.ContextId + ": " + longpoll.GetHashCode());
-            }
+            SettingsComplete();
         }
 
         private bool SettingsComplete()
@@ -144,21 +136,13 @@ namespace net.bootscreen.fhem
 
         public override void ReceivedGlobalSettings(ReceivedGlobalSettingsPayload payload)
         {
-            Logger.Instance.LogMessage(TracingLevel.DEBUG, "ReceivedGlobalSettings");
-            //Logger.Instance.LogMessage(TracingLevel.DEBUG, payload.Settings.ToString());
             Tools.AutoPopulateSettings(settings, payload.Settings);
 
             if (SettingsComplete())
             {
-                if (longpoll == null)
-                {
-                    //longpoll = Task.Run(longpoll_Async);
-                    longpoll = Task.Run(LongpollAsync);
-                    Logger.Instance.LogMessage(TracingLevel.DEBUG, "Task.Run " + Connection.ContextId + ": " + longpoll.GetHashCode());
-                }
-                //longpoll = Task.Run(longpoll_Async);
-                //Logger.Instance.LogMessage(TracingLevel.DEBUG, "longpoll_Async");
-                //Logger.Instance.LogMessage(TracingLevel.DEBUG, Connection.ContextId + ": " + longpoll.GetHashCode());
+                Logger.Instance.LogMessage(TracingLevel.DEBUG, "fhem_client: " + fhem_client.GetHashCode());
+                fhem_client.Connect(settings.FHEM_ip,settings.FHEM_port,settings.FHEM_user, settings.FHEM_pw, settings.FHEM_csrf);
+                fhem_client.FHEMMessageEvent += Fhem_client_FHEMMessageEvent;
             }
         }
 
@@ -212,52 +196,62 @@ namespace net.bootscreen.fhem
                 }
             }
         }
-        async Task LongpollAsync()
-        {
 
-            Logger.Instance.LogMessage(TracingLevel.DEBUG, "longpoll_Async: " + Connection.ContextId + ": " + settings.FHEM_status_dev);
-            var url = "http://" + settings.FHEM_ip + ":" + settings.FHEM_port + "/fhem?XHR=1&fwcsrf=" + settings.FHEM_csrf + "&inform=type=status;filter=" + settings.FHEM_status_dev + ";fmt=JSON";
-            //var url = "http://" + settings.FHEM_ip + ":" + settings.FHEM_port + "/fhem?XHR=1&fwcsrf=" + settings.FHEM_csrf + "&inform=type=status;filter=StreamDeckValue=..*;fmt=JSON";
-            //Logger.Instance.LogMessage(TracingLevel.DEBUG, "URL:" + url);
-            using (var client = new HttpClient())
+        private void Fhem_client_FHEMMessageEvent(object sender, FHEMMessageEventArgs e)
+        {
+            if (e.Device == settings.FHEM_status_dev + "-StreamDeckValue")
             {
-                client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
-                var request = new HttpRequestMessage(HttpMethod.Get, url);
-                using (var response = await client.SendAsync(
-                    request,
-                    HttpCompletionOption.ResponseHeadersRead))
-                {
-                    using (var body = await response.Content.ReadAsStreamAsync())
-                    {
-                        using (var reader = new StreamReader(body))
-                        {
-                            while (!reader.EndOfStream)
-                            {
-                                if (restart)
-                                {
-                                    restart = false;
-                                    Logger.Instance.LogMessage(TracingLevel.DEBUG, "TASK restart " + Connection.ContextId + ": " + longpoll.GetHashCode());
-                                    longpoll = Task.Run(LongpollAsync);
-                                    return;
-                                }
-                                string line = reader.ReadLine();
-                                if (line.Length > 1)
-                                {
-                                    //Response resp = JsonConvert.DeserializeObject<Response>(line);
-                                    List<string> resp = JsonConvert.DeserializeObject<List<string>>(line);
-                                    if (resp[0] == settings.FHEM_status_dev + "-StreamDeckValue")
-                                    {
-                                        Logger.Instance.LogMessage(TracingLevel.DEBUG, Connection.ContextId + ": " + longpoll.GetHashCode() + ": " + resp[1]);
-                                        await Connection.SetTitleAsync(resp[1]);
-                                        //Console.WriteLine(resp[0] + ": " + resp[1] + " - " + resp[2]);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                Console.WriteLine("> received this message: {0} - {1} - {2}", e.Device, e.Value1, e.Value2);
+                Connection.SetTitleAsync(e.Value1);
             }
         }
+
+        //async Task LongpollAsync()
+        //{
+
+        //    Logger.Instance.LogMessage(TracingLevel.DEBUG, "longpoll_Async: " + Connection.ContextId + ": " + settings.FHEM_status_dev);
+        //    var url = "http://" + settings.FHEM_ip + ":" + settings.FHEM_port + "/fhem?XHR=1&fwcsrf=" + settings.FHEM_csrf + "&inform=type=status;filter=" + settings.FHEM_status_dev + ";fmt=JSON";
+        //    //var url = "http://" + settings.FHEM_ip + ":" + settings.FHEM_port + "/fhem?XHR=1&fwcsrf=" + settings.FHEM_csrf + "&inform=type=status;filter=StreamDeckValue=..*;fmt=JSON";
+        //    //Logger.Instance.LogMessage(TracingLevel.DEBUG, "URL:" + url);
+        //    using (var client = new HttpClient())
+        //    {
+        //        client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
+        //        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        //        using (var response = await client.SendAsync(
+        //            request,
+        //            HttpCompletionOption.ResponseHeadersRead))
+        //        {
+        //            using (var body = await response.Content.ReadAsStreamAsync())
+        //            {
+        //                using (var reader = new StreamReader(body))
+        //                {
+        //                    while (!reader.EndOfStream)
+        //                    {
+        //                        if (restart)
+        //                        {
+        //                            restart = false;
+        //                            Logger.Instance.LogMessage(TracingLevel.DEBUG, "TASK restart " + Connection.ContextId + ": " + longpoll.GetHashCode());
+        //                            longpoll = Task.Run(LongpollAsync);
+        //                            return;
+        //                        }
+        //                        string line = reader.ReadLine();
+        //                        if (line.Length > 1)
+        //                        {
+        //                            //Response resp = JsonConvert.DeserializeObject<Response>(line);
+        //                            List<string> resp = JsonConvert.DeserializeObject<List<string>>(line);
+        //                            if (resp[0] == settings.FHEM_status_dev + "-StreamDeckValue")
+        //                            {
+        //                                Logger.Instance.LogMessage(TracingLevel.DEBUG, Connection.ContextId + ": " + longpoll.GetHashCode() + ": " + resp[1]);
+        //                                await Connection.SetTitleAsync(resp[1]);
+        //                                //Console.WriteLine(resp[0] + ": " + resp[1] + " - " + resp[2]);
+        //                            }
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
     }
 }
 
